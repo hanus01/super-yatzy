@@ -56,7 +56,7 @@
 
     <div class="game-layout" id="game" hidden>
       <section class="turn panel" id="turn" aria-labelledby="turn-title">
-        <p class="skipped-summary" id="skipped-summary" role="status"></p>
+        <p class="turn-summary" id="turn-summary" role="status"></p>
         <div class="turn-header">
           <div><p class="round-label" id="round-label"></p><h2 id="turn-title" tabindex="-1"></h2></div>
           <span class="roll-count" id="roll-count"></span>
@@ -69,7 +69,17 @@
           <button class="button primary" type="button" id="roll-dice">Roll dice</button>
           <button class="button secondary" type="button" id="release-dice">Release all</button>
         </div>
-        <p class="physical" id="physical-tray" hidden>Roll your own dice and tally your points.</p>
+        <div class="physical" id="physical-tray" hidden>
+          <div class="segmented" role="group" aria-label="How to enter your result">
+            <button id="physical-score-mode" type="button" aria-pressed="true">Enter score</button>
+            <button id="physical-dice-mode" type="button" aria-pressed="false">Enter dice</button>
+          </div>
+          <p id="physical-score-note">Roll your own dice and tally your points.</p>
+          <div id="physical-dice-controls" hidden>
+            <p>Enter all six faces to see your scoring options.</p>
+            <div id="physical-dice" class="physical-dice" role="group" aria-label="Final dice"></div>
+          </div>
+        </div>
         <div class="bonus" id="bonus-row">
           <label for="bonus-progress" id="bonus-label"></label>
           <progress id="bonus-progress" value="0" max="84"></progress>
@@ -122,7 +132,7 @@
         <dt>Pairs, groups and full house</dt><dd>Separate groups use different faces. Larger groups can supply smaller groups, and only the required dice count. A full house is three of one face and two of another.</dd>
         <dt>Straights and Chance</dt><dd>Low straight (1–5) scores 15, high straight (2–6) scores 20, and full straight (1–6) scores 30. Chance adds all six dice.</dd>
         <dt>Super-Yatzy</dt><dd>Six matching dice score 100 plus their sum. Each category is used once. There are no extra Yatzy bonuses or carried-over rolls.</dd>
-        <dt>Physical dice</dt><dd>Count your points, choose an open category, and enter the score. The game checks whether that score is possible in that category. The highest total after 18 rounds wins. Tied players share the win.</dd>
+        <dt>Physical dice</dt><dd>Choose <strong>Enter score</strong> to tally the points yourself. The game checks whether your score is possible before moving to the next turn. Choose <strong>Enter dice</strong> to enter six faces and preview the score for each open category. The highest total after 18 rounds wins. Tied players share the win.</dd>
       </dl>
       <button class="button primary" autofocus>Got it</button>
     </form>

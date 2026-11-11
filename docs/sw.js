@@ -2,7 +2,7 @@
 
 const scope = new URL(self.registration.scope);
 const cachePrefix = `super-yatzy:${scope.pathname}:`;
-const cacheName = `${cachePrefix}3`;
+const cacheName = `${cachePrefix}4`;
 const urls = ['index.html', 'style.css', 'game.js', 'ui.js', 'register.js',
   'manifest.webmanifest', 'icon-192.png', 'icon-512.png', 'apple-touch-icon.png']
   .map((file) => new URL(file, scope).href);

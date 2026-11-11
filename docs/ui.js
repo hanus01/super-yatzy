@@ -17,6 +17,7 @@ const diceModes = names.map(() => 'digital');
 let humanCount = 1;
 let game;
 let selectedCategory = null;
+let physicalModes;
 let computerTimer;
 let rollTimer;
 let computerWillRoll = false;
@@ -92,15 +93,17 @@ function resetTurnControls() {
   selectedCategory = null;
   computerWillRoll = false;
   scoreInput.value = '';
-  text('skipped-summary', '');
+  for (const die of physicalInputs) die.value = '';
+  text('turn-summary', '');
   showScoreFeedback('');
 }
 
-function beginGame(players = readPlayers()) {
+function beginGame(players = readPlayers(), modes) {
   if (!players) return;
   clearTimeout(computerTimer);
   clearTimeout(rollTimer);
   game = new Game(players);
+  physicalModes = modes ?? players.map(() => 'score');
   resetTurnControls();
   showGame();
   scoreScroll.scrollLeft = 0;
@@ -137,6 +140,20 @@ const diceButtons = Array.from({ length: diceCount }, (_, i) => {
   return button;
 });
 
+const physicalInputs = Array.from({ length: diceCount }, (_, i) => {
+  const select = node('select');
+  select.setAttribute('aria-label', `Final die ${i + 1}`);
+  select.append(option('', '—'));
+  for (let face = 1; face <= 6; face++) select.append(option(String(face), String(face)));
+  select.addEventListener('change', () => {
+    if (hasPhysicalFaces()) game.setPhysicalDice(physicalInputs.map(input => Number(input.value)));
+    showScoreFeedback('');
+    renderChoices();
+  });
+  get('physical-dice').append(select);
+  return select;
+});
+
 const categoryButtons = categories.map(({ name }, index) => {
   const button = node('button', undefined, 'category');
   const value = node('span', '—', 'category-value');
@@ -147,7 +164,7 @@ const categoryButtons = categories.map(({ name }, index) => {
     scoreInput.value = '';
     showScoreFeedback('');
     renderChoices();
-    if (isPhysical()) scoreInput.focus();
+    if (isManual()) scoreInput.focus();
   });
   get('categories').append(button);
   return { button, value };
@@ -170,6 +187,24 @@ function isPhysical() {
   return !game.current().computer && game.current().physicalDice;
 }
 
+function isManual() {
+  return isPhysical() && physicalModes[game.activeIndex] === 'score';
+}
+
+function hasPhysicalFaces() {
+  return physicalInputs.every(input => input.value);
+}
+
+function setPhysicalMode(mode) {
+  if (!isPhysical() || game.turnRecorded || physicalModes[game.activeIndex] === mode) return;
+  physicalModes[game.activeIndex] = mode;
+  selectedCategory = null;
+  scoreInput.value = '';
+  showScoreFeedback('');
+  renderTurn();
+  renderChoices();
+}
+
 function renderTurn() {
   const player = game.current();
   const physical = isPhysical();
@@ -182,7 +217,13 @@ function renderTurn() {
   get('digital-actions').hidden = physical || player.computer || game.turnRecorded;
   get('physical-tray').hidden = !physical || game.turnRecorded;
 
-  if (!physical) {
+  if (physical) {
+    const manual = isManual();
+    get('physical-score-mode').setAttribute('aria-pressed', String(manual));
+    get('physical-dice-mode').setAttribute('aria-pressed', String(!manual));
+    get('physical-score-note').hidden = !manual;
+    get('physical-dice-controls').hidden = manual;
+  } else {
     for (const [i, die] of diceButtons.entries()) {
       const moving = Boolean(pending?.moving[i]);
       const face = game.hasDice() ? game.dice[i] : null;
@@ -236,7 +277,7 @@ function recordedScore() {
 
 function canChoose() {
   if (game.finished || game.turnRecorded || game.current().computer || game.pendingRoll) return false;
-  return isPhysical() || game.hasDice();
+  return isPhysical() ? isManual() || (hasPhysicalFaces() && game.hasDice()) : game.hasDice();
 }
 
 function manualPoints() {
@@ -251,7 +292,7 @@ function showScoreFeedback(message) {
 
 function renderChoices() {
   const player = game.current();
-  const manual = isPhysical();
+  const manual = isManual();
   const enabled = canChoose();
   const scores = enabled && !manual ? game.candidateScores() : null;
   for (const [i, { button, value }] of categoryButtons.entries()) {
@@ -267,7 +308,7 @@ function renderChoices() {
   let help = 'Tap an open category to see your choice before recording it.';
   if (game.turnRecorded) help = 'Continue to play the next turn.';
   else if (player.computer) help = 'The computer chooses its own category.';
-  else if (!enabled) help = 'Roll the dice to see the available scores.';
+  else if (!enabled) help = isPhysical() ? 'Enter all six dice to see the available scores.' : 'Roll the dice to see the available scores.';
   else if (manual) help = 'Choose an open category, then enter its points.';
   text('choices-help', help);
 
@@ -383,12 +424,18 @@ function scheduleComputer() {
 
 function recordScore() {
   if (selectedCategory === null || !canChoose()) return;
-  const manual = isPhysical();
+  const manual = isManual();
   const points = manual ? manualPoints() : null;
   if (manual && points === null) return;
   const error = game.recordCategory(selectedCategory, points);
   if (error) {
     showScoreFeedback(error);
+    return;
+  }
+  if (manual) {
+    const summary = recordedScore();
+    nextTurn();
+    text('turn-summary', summary);
     return;
   }
   renderGame();
@@ -413,7 +460,7 @@ function skipComputer() {
   if (complete) game.advanceTurn();
   resetTurnControls();
   showGame();
-  text('skipped-summary', summary);
+  text('turn-summary', summary);
 }
 
 async function shareGame() {
@@ -463,7 +510,7 @@ get('setup-form').addEventListener('submit', event => {
 get('open-setup').addEventListener('click', showSetup);
 get('back-to-game').addEventListener('click', showGame);
 get('play-again').addEventListener('click', () => {
-  if (game.finished) beginGame(game.players);
+  if (game.finished) beginGame(game.players, physicalModes);
 });
 get('change-players').addEventListener('click', showSetup);
 get('share-game').addEventListener('click', shareGame);
@@ -483,6 +530,8 @@ get('release-dice').addEventListener('click', () => {
   game.held.fill(false);
   renderTurn();
 });
+get('physical-score-mode').addEventListener('click', () => setPhysicalMode('score'));
+get('physical-dice-mode').addEventListener('click', () => setPhysicalMode('dice'));
 new ResizeObserver(updateScoreScrollHint).observe(scoreScroll);
 scoreInput.addEventListener('input', () => {
   showScoreFeedback('');

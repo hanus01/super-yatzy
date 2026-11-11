@@ -5,6 +5,8 @@ const setup = get('setup');
 const board = get('game');
 const rulesDialog = get('rules-dialog');
 const restartDialog = get('restart-dialog');
+const shareDialog = get('share-dialog');
+const shareUrl = 'https://hanus01.github.io/super-yatzy/';
 const scoreScroll = get('score-scroll');
 const scoreTable = get('score-table');
 const scoreScrollHint = get('score-scroll-hint');
@@ -15,7 +17,6 @@ const diceModes = names.map(() => 'digital');
 let humanCount = 1;
 let game;
 let selectedCategory = null;
-let physicalMode = 'dice';
 let computerTimer;
 let rollTimer;
 let computerWillRoll = false;
@@ -89,15 +90,13 @@ function readPlayers() {
 
 function resetTurnControls() {
   selectedCategory = null;
-  physicalMode = 'dice';
   computerWillRoll = false;
   scoreInput.value = '';
-  for (const die of physicalInputs) die.value = '';
+  text('skipped-summary', '');
   showScoreFeedback('');
 }
 
-function beginGame() {
-  const players = readPlayers();
+function beginGame(players = readPlayers()) {
   if (!players) return;
   clearTimeout(computerTimer);
   clearTimeout(rollTimer);
@@ -138,21 +137,6 @@ const diceButtons = Array.from({ length: diceCount }, (_, i) => {
   return button;
 });
 
-const physicalInputs = Array.from({ length: diceCount }, (_, i) => {
-  const select = node('select');
-  select.setAttribute('aria-label', `Final die ${i + 1}`);
-  select.append(option('', '—'));
-  for (let face = 1; face <= diceCount; face++) select.append(option(String(face), String(face)));
-  select.addEventListener('change', () => {
-    const dice = physicalInputs.map(input => Number(input.value));
-    if (dice.every(Boolean)) game.setPhysicalDice(dice);
-    showScoreFeedback('');
-    renderChoices();
-  });
-  get('physical-dice').append(select);
-  return select;
-});
-
 const categoryButtons = categories.map(({ name }, index) => {
   const button = node('button', undefined, 'category');
   const value = node('span', '—', 'category-value');
@@ -163,6 +147,7 @@ const categoryButtons = categories.map(({ name }, index) => {
     scoreInput.value = '';
     showScoreFeedback('');
     renderChoices();
+    if (isPhysical()) scoreInput.focus();
   });
   get('categories').append(button);
   return { button, value };
@@ -197,12 +182,7 @@ function renderTurn() {
   get('digital-actions').hidden = physical || player.computer || game.turnRecorded;
   get('physical-tray').hidden = !physical || game.turnRecorded;
 
-  if (physical) {
-    get('physical-dice-mode').setAttribute('aria-pressed', String(physicalMode === 'dice'));
-    get('physical-score-mode').setAttribute('aria-pressed', String(physicalMode === 'score'));
-    get('physical-dice-controls').hidden = physicalMode === 'score';
-    get('physical-score-note').hidden = physicalMode === 'dice';
-  } else {
+  if (!physical) {
     for (const [i, die] of diceButtons.entries()) {
       const moving = Boolean(pending?.moving[i]);
       const face = game.hasDice() ? game.dice[i] : null;
@@ -237,16 +217,26 @@ function renderTurn() {
   if (game.turnRecorded) {
     const last = game.round === categoryCount && game.activeIndex === game.players.length - 1;
     const next = game.players[(game.activeIndex + 1) % game.players.length].name;
-    const points = `${game.lastPoints} ${game.lastPoints === 1 ? 'point' : 'points'}`;
-    text('recorded-summary', `${player.name} recorded ${categories[game.lastCategory].name} for ${points}.`);
+    text('recorded-summary', recordedScore());
     text('continue-turn', last ? 'See final results' : `Continue to ${next}`);
   }
+  const computerNext = game.turnRecorded && game.players[game.activeIndex + 1]?.computer;
+  const canSkip = computerNext || (player.computer && !game.turnRecorded);
+  get('skip-computer').hidden = !canSkip;
+  if (canSkip) {
+    const next = game.round === categoryCount ? 'See final results' : `Continue to ${game.players[0].name}`;
+    text('skip-computer', `${next} (skip animation)`);
+  }
+}
+
+function recordedScore() {
+  const unit = game.lastPoints === 1 ? 'point' : 'points';
+  return `${game.current().name} recorded ${categories[game.lastCategory].name} for ${game.lastPoints} ${unit}.`;
 }
 
 function canChoose() {
   if (game.finished || game.turnRecorded || game.current().computer || game.pendingRoll) return false;
-  if (!isPhysical()) return game.hasDice();
-  return physicalMode === 'score' || physicalInputs.every(input => input.value);
+  return isPhysical() || game.hasDice();
 }
 
 function manualPoints() {
@@ -261,7 +251,7 @@ function showScoreFeedback(message) {
 
 function renderChoices() {
   const player = game.current();
-  const manual = isPhysical() && physicalMode === 'score';
+  const manual = isPhysical();
   const enabled = canChoose();
   const scores = enabled && !manual ? game.candidateScores() : null;
   for (const [i, { button, value }] of categoryButtons.entries()) {
@@ -277,7 +267,8 @@ function renderChoices() {
   let help = 'Tap an open category to see your choice before recording it.';
   if (game.turnRecorded) help = 'Continue to play the next turn.';
   else if (player.computer) help = 'The computer chooses its own category.';
-  else if (!enabled) help = isPhysical() ? 'Enter all six dice to see the available scores.' : 'Roll the dice to see the available scores.';
+  else if (!enabled) help = 'Roll the dice to see the available scores.';
+  else if (manual) help = 'Choose an open category, then enter its points.';
   text('choices-help', help);
 
   const action = get('score-action');
@@ -368,10 +359,10 @@ function rollDice() {
 function scheduleComputer() {
   clearTimeout(computerTimer);
   const match = game;
-  if (!match || board.hidden || rulesDialog.open || restartDialog.open || match.finished
+  if (!match || board.hidden || rulesDialog.open || restartDialog.open || shareDialog.open || match.finished
     || match.turnRecorded || match.pendingRoll || !match.current().computer) return;
   computerTimer = setTimeout(() => {
-    if (match !== game || board.hidden || rulesDialog.open || restartDialog.open) return;
+    if (match !== game || board.hidden || rulesDialog.open || restartDialog.open || shareDialog.open) return;
     if (match.rolls === 0 || computerWillRoll) {
       rollDice();
       return;
@@ -392,7 +383,7 @@ function scheduleComputer() {
 
 function recordScore() {
   if (selectedCategory === null || !canChoose()) return;
-  const manual = isPhysical() && physicalMode === 'score';
+  const manual = isPhysical();
   const points = manual ? manualPoints() : null;
   if (manual && points === null) return;
   const error = game.recordCategory(selectedCategory, points);
@@ -407,18 +398,50 @@ function recordScore() {
 function nextTurn() {
   if (!game.advanceTurn()) return;
   resetTurnControls();
-  renderGame();
-  get(game.finished ? 'results-title' : 'turn-title').focus();
-  window.scrollTo(0, 0);
-  scheduleComputer();
+  showGame();
 }
 
-function setPhysicalMode(mode) {
-  physicalMode = mode;
-  selectedCategory = null;
-  showScoreFeedback('');
-  renderTurn();
-  renderChoices();
+function skipComputer() {
+  if (!game || game.finished || board.hidden) return;
+  if (!game.current().computer) {
+    if (!game.players[game.activeIndex + 1]?.computer || !game.advanceTurn()) return;
+  }
+  clearTimeout(computerTimer);
+  clearTimeout(rollTimer);
+  const complete = game.completeComputerTurn();
+  const summary = complete ? recordedScore() : '';
+  if (complete) game.advanceTurn();
+  resetTurnControls();
+  showGame();
+  text('skipped-summary', summary);
+}
+
+async function shareGame() {
+  if (typeof navigator.share === 'function') {
+    try {
+      await navigator.share({ title: 'Super Yatzy', url: shareUrl });
+      return;
+    } catch (error) {
+      if (error.name === 'AbortError') return;
+    }
+  }
+  const input = get('share-url');
+  input.value = shareUrl;
+  get('share-status').hidden = true;
+  shareDialog.showModal();
+}
+
+async function copyGameLink() {
+  const input = get('share-url');
+  try {
+    await navigator.clipboard.writeText(shareUrl);
+    text('share-status', 'Link copied.');
+  } catch {
+    input.focus();
+    input.select();
+    text('share-status', 'Select and copy the link.');
+  }
+  get('share-status').hidden = false;
 }
 
 get('add-player').addEventListener('click', () => {
@@ -439,7 +462,13 @@ get('setup-form').addEventListener('submit', event => {
 });
 get('open-setup').addEventListener('click', showSetup);
 get('back-to-game').addEventListener('click', showGame);
-get('play-again').addEventListener('click', showSetup);
+get('play-again').addEventListener('click', () => {
+  if (game.finished) beginGame(game.players);
+});
+get('change-players').addEventListener('click', showSetup);
+get('share-game').addEventListener('click', shareGame);
+get('copy-game-link').addEventListener('click', copyGameLink);
+shareDialog.addEventListener('close', scheduleComputer);
 get('open-rules').addEventListener('click', () => {
   clearTimeout(computerTimer);
   rulesDialog.showModal();
@@ -454,8 +483,6 @@ get('release-dice').addEventListener('click', () => {
   game.held.fill(false);
   renderTurn();
 });
-get('physical-dice-mode').addEventListener('click', () => setPhysicalMode('dice'));
-get('physical-score-mode').addEventListener('click', () => setPhysicalMode('score'));
 new ResizeObserver(updateScoreScrollHint).observe(scoreScroll);
 scoreInput.addEventListener('input', () => {
   showScoreFeedback('');
@@ -466,9 +493,10 @@ get('score-action').addEventListener('submit', event => {
   recordScore();
 });
 get('continue-turn').addEventListener('click', nextTurn);
+get('skip-computer').addEventListener('click', skipComputer);
 
 document.addEventListener('keydown', event => {
-  if (board.hidden || rulesDialog.open || restartDialog.open || game.finished || game.pendingRoll
+  if (board.hidden || rulesDialog.open || restartDialog.open || shareDialog.open || game.finished || game.pendingRoll
     || event.ctrlKey || event.metaKey || event.altKey || event.repeat
     || event.target.closest('button, input, select, textarea, a, [contenteditable]')) return;
   if (event.key === 'Enter' && game.turnRecorded) {

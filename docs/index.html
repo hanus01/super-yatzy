@@ -18,6 +18,7 @@
     <div class="shell header-inner">
       <div class="brand"><img src="./icon-192.png" alt="" width="42" height="42"><h1>Super Yatzy</h1></div>
       <nav aria-label="Game options">
+        <button class="button quiet" id="share-game" type="button">Share</button>
         <button class="button quiet" id="open-rules" type="button">Rules</button>
         <button class="button secondary" id="open-setup" type="button" hidden>New game</button>
       </nav>
@@ -30,6 +31,7 @@
       <div class="setup-intro">
         <h2 id="setup-title" tabindex="-1">Who’s playing?</h2>
         <p>Play on your own, take on the computer, or pass one phone around the table.</p>
+        <p class="offline-status" id="offline-status" role="status" hidden>Ready to play offline.</p>
       </div>
       <form id="setup-form">
         <div class="count-row">
@@ -54,6 +56,7 @@
 
     <div class="game-layout" id="game" hidden>
       <section class="turn panel" id="turn" aria-labelledby="turn-title">
+        <p class="skipped-summary" id="skipped-summary" role="status"></p>
         <div class="turn-header">
           <div><p class="round-label" id="round-label"></p><h2 id="turn-title" tabindex="-1"></h2></div>
           <span class="roll-count" id="roll-count"></span>
@@ -66,17 +69,7 @@
           <button class="button primary" type="button" id="roll-dice">Roll dice</button>
           <button class="button secondary" type="button" id="release-dice">Release all</button>
         </div>
-        <div class="physical" id="physical-tray" hidden>
-          <div class="segmented" role="group" aria-label="How to enter your result">
-            <button id="physical-dice-mode" type="button" aria-pressed="true">Enter dice</button>
-            <button id="physical-score-mode" type="button" aria-pressed="false">Enter score</button>
-          </div>
-          <div id="physical-dice-controls">
-            <p>Roll your own dice, then enter all six faces.</p>
-            <div id="physical-dice" class="physical-dice" role="group" aria-label="Final dice"></div>
-          </div>
-          <p id="physical-score-note" hidden>Choose an open category below, then enter its points.</p>
-        </div>
+        <p class="physical" id="physical-tray" hidden>Roll your own dice and tally your points.</p>
         <div class="bonus" id="bonus-row">
           <label for="bonus-progress" id="bonus-label"></label>
           <progress id="bonus-progress" value="0" max="84"></progress>
@@ -85,6 +78,7 @@
           <p id="recorded-summary" role="status"></p>
           <button class="button primary" id="continue-turn" type="button"></button>
         </div>
+        <button class="button secondary skip-computer" id="skip-computer" type="button" hidden></button>
       </section>
 
       <section class="choices panel" id="choices" aria-labelledby="choices-title">
@@ -113,7 +107,8 @@
       <section class="results panel" id="results" aria-labelledby="results-title" hidden>
         <h2 id="results-title" tabindex="-1"></h2>
         <ol id="rankings" class="rankings"></ol>
-        <button class="button primary" type="button" id="play-again">Play again</button>
+        <button class="button primary" type="button" id="play-again">Rematch</button>
+        <button class="button secondary" type="button" id="change-players">Change players</button>
       </section>
     </div>
   </main>
@@ -127,9 +122,22 @@
         <dt>Pairs, groups and full house</dt><dd>Separate groups use different faces. Larger groups can supply smaller groups, and only the required dice count. A full house is three of one face and two of another.</dd>
         <dt>Straights and Chance</dt><dd>Low straight (1–5) scores 15, high straight (2–6) scores 20, and full straight (1–6) scores 30. Chance adds all six dice.</dd>
         <dt>Super-Yatzy</dt><dd>Six matching dice score 100 plus their sum. Each category is used once. There are no extra Yatzy bonuses or carried-over rolls.</dd>
-        <dt>Physical dice</dt><dd>Enter your six final dice or enter the points for an open category. The highest total after 18 rounds wins. Tied players share the win.</dd>
+        <dt>Physical dice</dt><dd>Count your points, choose an open category, and enter the score. The game checks whether that score is possible in that category. The highest total after 18 rounds wins. Tied players share the win.</dd>
       </dl>
       <button class="button primary" autofocus>Got it</button>
+    </form>
+  </dialog>
+
+  <dialog id="share-dialog" aria-labelledby="share-title">
+    <form method="dialog" class="dialog-content">
+      <h2 id="share-title">Share Super Yatzy</h2>
+      <label for="share-url">Game link</label>
+      <input id="share-url" type="url" readonly>
+      <div class="dialog-actions">
+        <button class="button primary" type="button" id="copy-game-link" autofocus>Copy link</button>
+        <button class="button secondary">Done</button>
+      </div>
+      <p id="share-status" role="status" hidden></p>
     </form>
   </dialog>
 

@@ -417,6 +417,20 @@ export class Game {
     return true;
   }
 
+  completeComputerTurn() {
+    if (this.finished || !this.current().computer) return false;
+    if (this.turnRecorded) return true;
+    // A roll already in motion has drawn its dice. Use that roll when skipping.
+    if (this.pendingRoll && !this.commitRoll()) return false;
+    if (this.rolls === 0 && !this.roll()) return false;
+    for (;;) {
+      const decision = this.computerDecision();
+      if (!decision) return false;
+      if (decision.scoreNow) return this.recordCategory(decision.category) === null;
+      if (!this.applyComputerHolds(decision.keep) || !this.roll()) return false;
+    }
+  }
+
   winners() {
     if (!this.finished) return [];
     const scores = this.players.map(player => total(player.card));

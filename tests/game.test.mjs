@@ -90,6 +90,65 @@ test("physical dice accept six legal values and manual entries require attainabl
   assert.equal(game.recordCategory(5, 0), null);
 });
 
+test("counted physical scores are accepted only in a category that can produce them", () => {
+  const game = new Game([{ ...player, physicalDice: true }], { seed });
+  assert.match(game.recordCategory(13, 15), /not possible/);
+  assert.match(game.recordCategory(17, 120), /not possible/);
+  assert.equal(game.turnRecorded, false);
+  assert.equal(game.recordCategory(17, 130), null);
+  assert.equal(game.lastPoints, 130);
+  assert.equal(game.advanceTurn(), true);
+  assert.equal(game.recordCategory(13, 0), null);
+});
+
+test("skipping before or during a computer roll keeps the same score and subsequent dice", () => {
+  function enterComputerTurn() {
+    const game = new Game([player, computer], { seed });
+    assert.equal(game.completeComputerTurn(), false);
+    assert.equal(game.roll(), true);
+    assert.equal(game.recordCategory(16), null);
+    assert.equal(game.advanceTurn(), true);
+    return game;
+  }
+
+  const reference = enterComputerTurn();
+  assert.equal(reference.roll(), true);
+  for (;;) {
+    const decision = reference.computerDecision();
+    if (decision.scoreNow) {
+      assert.equal(reference.recordCategory(decision.category), null);
+      break;
+    }
+    assert.equal(reference.applyComputerHolds(decision.keep), true);
+    assert.equal(reference.roll(), true);
+  }
+  const computerCard = reference.current().card;
+  const computerDice = reference.dice;
+  assert.equal(reference.advanceTurn(), true);
+  assert.equal(reference.roll(), true);
+
+  for (const stage of ['start', 'first roll pending', 'holding', 'reroll pending']) {
+    const game = enterComputerTurn();
+    if (stage !== 'start') assert.ok(game.beginRoll());
+    if (stage === 'holding' || stage === 'reroll pending') {
+      assert.equal(game.commitRoll(), true);
+      const decision = game.computerDecision();
+      assert.equal(decision.scoreNow, false);
+      assert.equal(game.applyComputerHolds(decision.keep), true);
+      if (stage === 'reroll pending') assert.ok(game.beginRoll());
+    }
+    assert.equal(game.completeComputerTurn(), true, stage);
+    assert.deepEqual(game.current().card, computerCard, stage);
+    assert.deepEqual(game.dice, computerDice, stage);
+    assert.equal(game.completeComputerTurn(), true, stage);
+    assert.equal(game.advanceTurn(), true, stage);
+    assert.equal(game.current().name, player.name, stage);
+    assert.equal(game.round, 2, stage);
+    assert.equal(game.roll(), true, stage);
+    assert.deepEqual(game.dice, reference.dice, stage);
+  }
+});
+
 test("default new games with a computer each request fresh browser entropy", t => {
   const words = [seed, [124759, 49477, 3179190, 1271]];
   let seededGames = 0;

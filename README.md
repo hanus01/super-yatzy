@@ -8,7 +8,7 @@
 
 Open the game in Safari, tap **Share → Add to Home Screen**, enable **Open as Web App** if shown, and tap **Add**. Open the icon once while online so the browser can cache the game files for offline play.
 
-Each player can use the on-screen dice or roll physical dice and enter the result. With on-screen dice, roll up to three times, tap the dice you want to keep, and choose an unused category. A recorded turn stays visible until the next player is ready. Use **Rules** in the game for scoring details.
+Each player can use the on-screen dice or roll physical dice and enter the points they counted for a category. The web app checks that the score is possible. With on-screen dice, roll up to three times, tap the dice you want to keep, and choose an unused category. When the computer is next, the skip-animation button plays and scores its turn immediately. After the final scores, **Rematch** starts a new game with the same players and settings. Use **Rules** for scoring details and **Share** to send the game link.
 
 The web game runs on the device. Player names, dice, and scores live in memory for the current session. The offline cache holds the app files. Playing requires no account, server-side game storage, or analytics script.
 

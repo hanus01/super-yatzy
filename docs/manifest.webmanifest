@@ -1,0 +1,15 @@
+{
+  "id": "./",
+  "name": "Super Yatzy",
+  "short_name": "Super Yatzy",
+  "description": "Six-dice Yatzy for one player, friends at the table, or the computer.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5efe5",
+  "theme_color": "#f5efe5",
+  "icons": [
+    {"src": "./icon-192.png", "sizes": "192x192", "type": "image/png"},
+    {"src": "./icon-512.png", "sizes": "512x512", "type": "image/png"}
+  ]
+}

@@ -1,0 +1,149 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#f5efe5">
+  <meta name="description" content="Play six-dice Super Yatzy solo, with friends on one device, or against the computer.">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon-192.png" type="image/png">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <link rel="stylesheet" href="./style.css">
+  <script type="module" src="./ui.js"></script>
+  <script defer src="./register.js"></script>
+  <title>Super Yatzy</title>
+</head>
+<body>
+  <header class="site-header">
+    <div class="shell header-inner">
+      <div class="brand"><img src="./icon-192.png" alt="" width="42" height="42"><h1>Super Yatzy</h1></div>
+      <nav aria-label="Game options">
+        <button class="button quiet" id="open-rules" type="button">Rules</button>
+        <button class="button secondary" id="open-setup" type="button" hidden>New game</button>
+      </nav>
+    </div>
+  </header>
+
+  <main class="shell main">
+    <noscript><p class="notice">Turn on JavaScript to play Super Yatzy.</p></noscript>
+    <section class="setup panel" id="setup" aria-labelledby="setup-title">
+      <div class="setup-intro">
+        <h2 id="setup-title" tabindex="-1">Who’s playing?</h2>
+        <p>Play on your own, take on the computer, or pass one phone around the table.</p>
+      </div>
+      <form id="setup-form">
+        <div class="count-row">
+          <span class="field-label" id="player-count-label">Human players</span>
+          <div class="stepper" role="group" aria-labelledby="player-count-label">
+            <button id="remove-player" class="button secondary" type="button" aria-label="Remove a player">−</button>
+            <output id="player-count" aria-live="polite">1</output>
+            <button id="add-player" class="button secondary" type="button" aria-label="Add a player">+</button>
+          </div>
+        </div>
+        <div id="player-settings" class="player-settings"></div>
+        <label class="computer-setting">
+          <input id="computer-option" type="checkbox" checked>
+          <span><strong>Computer opponent</strong><small>Rolls and chooses its scores automatically.</small></span>
+        </label>
+        <div class="setup-actions">
+          <button class="button secondary" id="back-to-game" type="button" hidden>Back to game</button>
+          <button class="button primary" type="submit">Start game</button>
+        </div>
+      </form>
+    </section>
+
+    <div class="game-layout" id="game" hidden>
+      <section class="turn panel" id="turn" aria-labelledby="turn-title">
+        <div class="turn-header">
+          <div><p class="round-label" id="round-label"></p><h2 id="turn-title" tabindex="-1"></h2></div>
+          <span class="roll-count" id="roll-count"></span>
+        </div>
+        <div class="felt" id="digital-tray">
+          <div class="dice" id="dice" role="group" aria-label="Dice"></div>
+          <p id="dice-instruction" aria-live="polite"></p>
+        </div>
+        <div class="turn-actions" id="digital-actions">
+          <button class="button primary" type="button" id="roll-dice">Roll dice</button>
+          <button class="button secondary" type="button" id="release-dice">Release all</button>
+        </div>
+        <div class="physical" id="physical-tray" hidden>
+          <div class="segmented" role="group" aria-label="How to enter your result">
+            <button id="physical-dice-mode" type="button" aria-pressed="true">Enter dice</button>
+            <button id="physical-score-mode" type="button" aria-pressed="false">Enter score</button>
+          </div>
+          <div id="physical-dice-controls">
+            <p>Roll your own dice, then enter all six faces.</p>
+            <div id="physical-dice" class="physical-dice" role="group" aria-label="Final dice"></div>
+          </div>
+          <p id="physical-score-note" hidden>Choose an open category below, then enter its points.</p>
+        </div>
+        <div class="bonus" id="bonus-row">
+          <label for="bonus-progress" id="bonus-label"></label>
+          <progress id="bonus-progress" value="0" max="84"></progress>
+        </div>
+        <div class="turn-complete" id="turn-complete" hidden>
+          <p id="recorded-summary" role="status"></p>
+          <button class="button primary" id="continue-turn" type="button"></button>
+        </div>
+      </section>
+
+      <section class="choices panel" id="choices" aria-labelledby="choices-title">
+        <h2 id="choices-title">Choose a category</h2>
+        <p id="choices-help" class="muted"></p>
+        <div id="categories" class="category-list" role="group" aria-labelledby="choices-title"></div>
+        <form class="score-action" id="score-action" hidden>
+          <div class="score-selection">
+            <strong id="selected-category"></strong>
+            <label id="manual-score-label" hidden>Points <input id="manual-score" inputmode="numeric" type="text" maxlength="3" autocomplete="off"></label>
+          </div>
+          <button class="button primary" id="record-score" type="submit">Record score</button>
+          <p id="score-feedback" class="error" role="alert" hidden></p>
+        </form>
+      </section>
+
+      <section class="scorecard panel" aria-labelledby="scorecard-title">
+        <div class="scorecard-header">
+          <h2 id="scorecard-title">Scorecard</h2>
+          <label id="score-player-label">Show <select id="score-player" aria-label="Player scorecard"></select></label>
+        </div>
+        <div class="score-scroll" id="score-scroll" role="region" aria-label="Scorecard table" tabindex="0">
+          <table id="score-table"></table>
+        </div>
+        <p class="score-legend">A dash means open. Zero means scratched.</p>
+      </section>
+
+      <section class="results panel" id="results" aria-labelledby="results-title" hidden>
+        <h2 id="results-title" tabindex="-1"></h2>
+        <ol id="rankings" class="rankings"></ol>
+        <button class="button primary" type="button" id="play-again">Play again</button>
+      </section>
+    </div>
+  </main>
+
+  <dialog id="rules-dialog" aria-labelledby="rules-title">
+    <form method="dialog" class="dialog-content">
+      <h2 id="rules-title">How to play</h2>
+      <p>Roll six dice up to three times per turn. Keep any dice between rolls, then score one open category. You can score early. A score of zero scratches that category.</p>
+      <dl class="rules-list">
+        <dt>Upper section</dt><dd>Add the dice showing that face. A total of 84 or more earns a 50-point bonus.</dd>
+        <dt>Pairs, groups and full house</dt><dd>Separate groups use different faces. Larger groups can supply smaller groups, and only the required dice count. A full house is three of one face and two of another.</dd>
+        <dt>Straights and Chance</dt><dd>Low straight (1–5) scores 15, high straight (2–6) scores 20, and full straight (1–6) scores 30. Chance adds all six dice.</dd>
+        <dt>Super-Yatzy</dt><dd>Six matching dice score 100 plus their sum. Each category is used once. There are no extra Yatzy bonuses or carried-over rolls.</dd>
+        <dt>Physical dice</dt><dd>Enter your six final dice or enter the points for an open category. The highest total after 18 rounds wins. Tied players share the win.</dd>
+      </dl>
+      <button class="button primary" autofocus>Got it</button>
+    </form>
+  </dialog>
+
+  <dialog id="restart-dialog" aria-labelledby="restart-title">
+    <form method="dialog" class="dialog-content">
+      <h2 id="restart-title">Start a new game?</h2>
+      <p>This replaces the current scorecard.</p>
+      <div class="dialog-actions">
+        <button class="button secondary" value="cancel" autofocus>Keep current game</button>
+        <button class="button primary" value="restart">Start new game</button>
+      </div>
+    </form>
+  </dialog>
+</body>
+</html>

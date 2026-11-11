@@ -264,14 +264,26 @@ input:not([type="checkbox"]), select {
 .score-action .button { max-width: 157px; font-size: .83rem; padding-inline: 8px; }
 .error { grid-column: 1 / -1; color: #8d2419; font-size: .86rem; }
 
-.scorecard-header { display: flex; align-items: center; justify-content: space-between; gap: 6px; margin-bottom: 10px; }
-.scorecard-header label { display: flex; gap: 6px; align-items: center; min-width: 0; color: var(--muted); font-size: .8rem; }
-.scorecard-header select { max-width: 142px; font-size: 1rem; }
-.score-scroll { overflow: auto; border: 1px solid var(--border); border-radius: 8px; }
+.scorecard h2 { margin-bottom: 10px; }
+.score-scroll-hint { margin-bottom: 8px; color: var(--muted); font-size: .8rem; }
+.score-scroll {
+  max-width: 100%;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
 .score-scroll table { width: 100%; border-collapse: separate; border-spacing: 0; font-size: .85rem; }
-.score-scroll th, .score-scroll td { padding: 7px 9px; border-bottom: 1px solid #e8e4da; text-align: center; }
+.score-scroll th, .score-scroll td { padding: 7px 6px; border-bottom: 1px solid #e8e4da; text-align: center; }
 .score-scroll thead th { color: var(--rust); background: #f4eee2; font-size: .8rem; }
-.score-scroll th[scope="row"], .score-scroll thead th:first-child { min-width: 124px; position: sticky; left: 0; z-index: 1; text-align: left; }
+.score-scroll th[scope="row"], .score-scroll thead th:first-child {
+  min-width: 116px;
+  position: sticky;
+  left: 0;
+  z-index: 1;
+  text-align: left;
+  box-shadow: 1px 0 var(--border);
+}
 .score-scroll th[scope="row"] { background: var(--paper); font-weight: 560; }
 .score-scroll td { min-width: 56px; font-variant-numeric: tabular-nums; }
 .score-scroll .player-score { min-width: 82px; max-width: 145px; overflow-wrap: anywhere; }
@@ -314,5 +326,5 @@ dialog::backdrop { background: #192c24a8; }
   .site-header .button { padding-inline: 14px; }
   .game-layout { grid-template-columns: minmax(0, 1fr) minmax(0, .94fr); grid-template-areas: "card turn" "card choices"; gap: 14px; align-items: start; }
   .game-layout.is-finished { grid-template-areas: "card results"; }
-  .scorecard-header select { max-width: 185px; }
+  .score-scroll th, .score-scroll td { padding-inline: 9px; }
 }

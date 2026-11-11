@@ -5,7 +5,9 @@ const setup = get('setup');
 const board = get('game');
 const rulesDialog = get('rules-dialog');
 const restartDialog = get('restart-dialog');
-const scorePlayer = get('score-player');
+const scoreScroll = get('score-scroll');
+const scoreTable = get('score-table');
+const scoreScrollHint = get('score-scroll-hint');
 const scoreInput = get('manual-score');
 const reduceMotion = matchMedia('(prefers-reduced-motion: reduce)');
 const names = Array.from({ length: 8 }, (_, i) => `Player ${i + 1}`);
@@ -101,11 +103,8 @@ function beginGame() {
   clearTimeout(rollTimer);
   game = new Game(players);
   resetTurnControls();
-  scorePlayer.replaceChildren();
-  if (game.players.length > 1) scorePlayer.append(option('all', 'All players'));
-  game.players.forEach(({ name }, i) => scorePlayer.append(option(String(i), name)));
-  scorePlayer.value = game.players.length > 1 && matchMedia('(min-width: 820px)').matches ? 'all' : '0';
   showGame();
+  scoreScroll.scrollLeft = 0;
 }
 
 function showSetup() {
@@ -294,9 +293,11 @@ function renderChoices() {
     : `Record ${points} ${points === 1 ? 'point' : 'points'}`);
 }
 
+function updateScoreScrollHint() {
+  scoreScrollHint.hidden = scoreScroll.scrollWidth <= scoreScroll.clientWidth;
+}
+
 function renderScorecard() {
-  const players = scorePlayer.value === 'all' ? game.players.map((_, i) => i) : [Number(scorePlayer.value)];
-  get('score-player-label').hidden = game.players.length === 1;
   const head = node('thead');
   const header = node('tr');
   for (const label of ['Category', 'Max']) {
@@ -304,8 +305,8 @@ function renderScorecard() {
     cell.scope = 'col';
     header.append(cell);
   }
-  for (const index of players) {
-    const cell = node('th', game.players[index].name, 'player-score');
+  for (const [index, player] of game.players.entries()) {
+    const cell = node('th', player.name, 'player-score');
     cell.scope = 'col';
     if (!game.finished && index === game.activeIndex) cell.classList.add('current-score');
     header.append(cell);
@@ -317,8 +318,8 @@ function renderScorecard() {
     const name = node('th', label);
     name.scope = 'row';
     line.append(name, node('td', maximum, 'score-max'));
-    for (const index of players) {
-      const cell = node('td', pointsFor(game.players[index].card) ?? '—');
+    for (const [index, player] of game.players.entries()) {
+      const cell = node('td', pointsFor(player.card) ?? '—');
       if (!game.finished && index === game.activeIndex) cell.classList.add('current-score');
       line.append(cell);
     }
@@ -332,7 +333,8 @@ function renderScorecard() {
     }
   }
   row('Total', '—', total, 'score-summary score-total');
-  get('score-table').replaceChildren(head, body);
+  scoreTable.replaceChildren(head, body);
+  updateScoreScrollHint();
 }
 
 function renderResults() {
@@ -404,7 +406,6 @@ function recordScore() {
 
 function nextTurn() {
   if (!game.advanceTurn()) return;
-  if (scorePlayer.value !== 'all') scorePlayer.value = String(game.activeIndex);
   resetTurnControls();
   renderGame();
   get(game.finished ? 'results-title' : 'turn-title').focus();
@@ -455,7 +456,7 @@ get('release-dice').addEventListener('click', () => {
 });
 get('physical-dice-mode').addEventListener('click', () => setPhysicalMode('dice'));
 get('physical-score-mode').addEventListener('click', () => setPhysicalMode('score'));
-scorePlayer.addEventListener('change', renderScorecard);
+new ResizeObserver(updateScoreScrollHint).observe(scoreScroll);
 scoreInput.addEventListener('input', () => {
   showScoreFeedback('');
   renderChoices();

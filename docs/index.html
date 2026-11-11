@@ -7,7 +7,7 @@
   <meta name="description" content="Play six-dice Super Yatzy solo, with friends on one device, or against the computer.">
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="icon" href="./icon-192.png" type="image/png">
-  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png?v=2">
   <link rel="stylesheet" href="./style.css">
   <script type="module" src="./ui.js"></script>
   <script defer src="./register.js"></script>
@@ -102,10 +102,8 @@
       </section>
 
       <section class="scorecard panel" aria-labelledby="scorecard-title">
-        <div class="scorecard-header">
-          <h2 id="scorecard-title">Scorecard</h2>
-          <label id="score-player-label">Show <select id="score-player" aria-label="Player scorecard"></select></label>
-        </div>
+        <h2 id="scorecard-title">Scorecard</h2>
+        <p class="score-scroll-hint" id="score-scroll-hint" hidden>Scroll sideways to compare players.</p>
         <div class="score-scroll" id="score-scroll" role="region" aria-label="Scorecard table" tabindex="0">
           <table id="score-table"></table>
         </div>
